@@ -97,12 +97,14 @@ async def get_all_posts(user: Union[str, None] = None):
     """
     if user :
         logger.info(f"Récupération des postes de : {user}")
-        res =
+        res = table.query(
+        KeyConditionExpression=Key('user').eq(f"USER#{user}")
+        )
     else :
         logger.info("Récupération de tous les postes")
-        res = 
+        res = table.scan()
      # Doit retourner une liste de posts
-    return res[""]
+    return res["Items"]
 
     
 @app.delete("/posts/{post_id}")
@@ -111,11 +113,16 @@ async def delete_post(post_id: str, authorization: str | None = Header(default=N
     logger.info(f"post id : {post_id}")
     logger.info(f"user: {authorization}")
     # Récupération des infos du poste
-
+    item = get_all_posts(authorization) 
     # S'il y a une image on la supprime de S3
-
+    if item.get("image") :
+        path_image = f'{item["user"]}/{item["id"]}/{item["image"]}'
+        s3_client.delete(Bucket=bucket, Key=path_image)
     # Suppression de la ligne dans la base dynamodb
-
+    item = table.delete_item(
+        Key={'user': f'USER#{authorization}',
+        'id_post': f'ID#{post_id}'}
+        )
     # Retourne le résultat de la requête de suppression
     return item
 
