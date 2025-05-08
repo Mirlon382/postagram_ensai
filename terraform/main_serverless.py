@@ -39,7 +39,7 @@ class ServerlessStack(TerraformStack):
             self, "DynamodDB-table",
             name= "postagram_table",
             hash_key="user",
-            range_key="title",
+            range_key="id",
             attribute=[
                 DynamodbTableAttribute(name="user",type="S" ),
                 DynamodbTableAttribute(name="id",type="S" ),
