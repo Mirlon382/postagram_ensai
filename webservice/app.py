@@ -66,13 +66,25 @@ async def post_a_post(post: Post, authorization: str | None = Header(default=Non
     """
     Poste un post ! Les informations du poste sont dans post.title, post.body et le user dans authorization
     """
+    import uuid
+    str_id = f'{uuid.uuid4()}'
+
     logger.info(f"title : {post.title}")
     logger.info(f"body : {post.body}")
     logger.info(f"user : {authorization}")
 
+    data = table.put_item(Item={
+        'user':authorization,
+        'id':str_id,
+        'title':post.title,
+        'body':post.body,
+        'image':post.image or '',
+        'label':post.label or []
+        }
+        )
 
     # Doit retourner le résultat de la requête la table dynamodb
-    return res
+    return data
 
 @app.get("/posts")
 async def get_all_posts(user: Union[str, None] = None):
