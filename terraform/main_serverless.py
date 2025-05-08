@@ -20,8 +20,8 @@ class ServerlessStack(TerraformStack):
         account_id = DataAwsCallerIdentity(self, "acount_id").account_id
         
         bucket = S3Bucket(
-            self, "bucket",
-            bucket_prefix=""
+            self, "s3_bucket",
+            bucket_prefix="bucket_image"
         )
 
         # NE PAS TOUCHER !!!!
@@ -37,13 +37,17 @@ class ServerlessStack(TerraformStack):
 
         dynamo_table = DynamodbTable(
             self, "DynamodDB-table",
-            name= "",
-            hash_key="",
-            range_key="",
+            name= "postagram_table",
+            hash_key="user",
+            range_key="title",
             attribute=[
-                DynamodbTableAttribute(name="",type="S" ),
-                DynamodbTableAttribute(name="",type="S" ),
-            ],
+                DynamodbTableAttribute(name="user",type="S" ),
+                DynamodbTableAttribute(name="id",type="S" ),
+                DynamodbTableAttribute(name="title",type="S" ),
+                DynamodbTableAttribute(name="body",type="S" ),
+                DynamodbTableAttribute(name="image",type="S" ),
+                DynamodbTableAttribute(name="label",type="S" )
+                ],
             billing_mode="PROVISIONED",
             read_capacity=5,
             write_capacity=5
