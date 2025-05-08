@@ -45,53 +45,81 @@ class ServerStack(TerraformStack):
     def __init__(self, scope: Construct, id: str):
         super().__init__(scope, id)
 
-        # account_id = l'id de votre compte
-        # security_group = le security groupe pour vos instances EC2
+        account_id = DataAwsCallerIdentity(self, "acount_id").account_id
+        
+        security_group = SecurityGroup(
+                            self, "sg-tp",
+                            ingress=[
+                                SecurityGroupIngress(
+                                    from_port=22,
+                                    to_port=22,
+                                    cidr_blocks=["0.0.0.0/0"],
+                                    protocol="TCP",
+                                    description="Accept incoming SSH connection"
+                                ),
+                                SecurityGroupIngress(
+                                    from_port=80,
+                                    to_port=80,
+                                    cidr_blocks=["0.0.0.0/0"],
+                                    protocol="TCP",
+                                    description="Accept incoming HTTP connection"
+                                )
+                            ],
+                            egress=[
+                                SecurityGroupEgress(
+                                    from_port=0,
+                                    to_port=0,
+                                    cidr_blocks=["0.0.0.0/0"],
+                                    protocol="-1",
+                                    description="allow all egresse connection"
+                                )
+                            ]
+                        )
         account_id, security_group, subnets, default_vpc = self.infra_base()
         
         launch_template = LaunchTemplate(
             self, "launch template",
-            image_id=""
-            instance_type=", # le type de l'instance
-            vpc_security_group_ids = [],
-            key_name="",
-            user_data=,
+            image_id="ami-04b4f1a9cf54c11d0"
+            instance_type="t2.micro", # le type de l'instance
+            vpc_security_group_ids = [security_group.id],
+            key_name="vockey",
+            user_data=user_data,
             tags={"Name":"TP noté"},
-            iam_instance_profile={"name":"LabInstanceProfile"}
+            iam_instance_profile={"name":"LabInstanceProfile","arn":"arn_du_role_de_lambda"}
             )
     
 
         lb = Lb(
             self, "lb",
-            load_balancer_type="",
-            security_groups=[],
-            subnets=
+            load_balancer_type="application",
+            security_groups=[security_group.id],
+            subnets=subnets
         )
 
         target_group=LbTargetGroup(
             self, "tg_group",
-            port=,
-            protocol="",
-            vpc_id=,
-            target_type=""
+            port=8080,
+            protocol="HTTP",
+            vpc_id=default_vpc.id,
+            target_type="instance"
         )
 
         lb_listener = LbListener(
             self, "lb_listener",
-            load_balancer_arn=,
-            port=,
-            protocol="",
+            load_balancer_arn=lb.arn,
+            port=8080,
+            protocol="HTTP",
             default_action=[LbListenerDefaultAction()]
         )
 
         asg = AutoscalingGroup(
-            self, "",
-            min_size=,
-            max_size=,
-            desired_capacity=,
-            launch_template={"id":},
-            vpc_zone_identifier= ,
-            target_group_arns=[]
+            self, "asg",
+            min_size=1,
+            max_size=4,
+            desired_capacity=1,
+            launch_template={"id":launch_template.id},
+            vpc_zone_identifier=subnets,
+            target_group_arns=[target_group.arn]
         )
 
     def infra_base(self):
