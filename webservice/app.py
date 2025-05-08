@@ -43,6 +43,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 class Post(BaseModel):
     title: str
     body: str
+    image: Union[str, None] = None
+    label: Union[list[str], None] = []
 
 my_config = Config(
     region_name='us-east-1',
@@ -74,12 +76,12 @@ async def post_a_post(post: Post, authorization: str | None = Header(default=Non
     logger.info(f"user : {authorization}")
 
     data = table.put_item(Item={
-        'user':authorization,
-        'id':str_id,
+        'user':f"USER#{authorization}",
+        'id':f"ID_POST#{str_id}",
         'title':post.title,
         'body':post.body,
-        'image':post.image or '',
-        'label':post.label or []
+        'image':post.image,
+        'label':post.label
         }
         )
 
@@ -95,8 +97,10 @@ async def get_all_posts(user: Union[str, None] = None):
     """
     if user :
         logger.info(f"Récupération des postes de : {user}")
+        res =
     else :
         logger.info("Récupération de tous les postes")
+        res = 
      # Doit retourner une liste de posts
     return res[""]
 
