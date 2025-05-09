@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 from constructs import Construct
 from cdktf import App, TerraformStack
-from imports.aws.s3_bucket import S3Bucket
-from imports.aws.dynamodb_table import DynamodbTable, DynamodbTableAttributef
 
 
 class MyStack(TerraformStack):
