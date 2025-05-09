@@ -15,13 +15,13 @@ from cdktf_cdktf_provider_aws.data_aws_caller_identity import DataAwsCallerIdent
 import base64
 
 # Mettez ici le nom du bucket S3 crée dans la partie serverless
-bucket=""
+bucket="s3_bucket"
 
 # Mettez ici le nom de la table dynamoDB créée dans la partie serverless
-dynamo_table=""
+dynamo_table="DynamodDB-table"
 
 # Mettez ici l'url de votre dépôt github. Votre dépôt doit être public !!!
-your_repo=""
+your_repo="https://github.com/Mirlon382/postagram_ensai"
 
 # Le user data pour lancer votre websservice. Il fonctionne tel quel
 user_data= base64.b64encode(f"""#!/bin/bash
@@ -79,7 +79,7 @@ class ServerStack(TerraformStack):
         
         launch_template = LaunchTemplate(
             self, "launch template",
-            image_id="ami-04b4f1a9cf54c11d0"
+            image_id="ami-04b4f1a9cf54c11d0",
             instance_type="t2.micro", # le type de l'instance
             vpc_security_group_ids = [security_group.id],
             key_name="vockey",

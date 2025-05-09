@@ -115,7 +115,7 @@ async def delete_post(post_id: str, authorization: str | None = Header(default=N
     # Récupération des infos du poste
     item = get_all_posts(authorization) 
     # S'il y a une image on la supprime de S3
-    if item["image"] :
+    if item["Items"]["image"] :
         path_image = f'{item["user"]}/{item["id"]}/{item["image"]}'
         s3_client.delete(Bucket=bucket, Key=path_image)
     # Suppression de la ligne dans la base dynamodb
