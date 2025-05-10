@@ -14,22 +14,30 @@ table = dynamodb.Table(os.getenv("table"))
 
 def lambda_handler(event, context):
     logger.info(json.dumps(event, indent=2))
-    bucket = ""
-    key = unquote_plus(event) # <- A modifier !!!!
-
-    # Récupération de l'utilisateur et de l'UUID de la tâche
+    bucket = event["Records"][0]["s3"]["bucket"]["name"]
     
+    # Récupération de l'utilisateur et de l'UUID de la tâche
+    key = unquote_plus(event["Records"][0]["s3"]["object"]["key"])
 
     # Ajout des tags user et task_uuid
+    user, task_uuid = key.split('/')[:2]
 
     # Appel à reckognition
-    label_data = reckognition.detect_labels(
-
-    )
+    label_data = reckognition.detect_labels( 
+            Image={
+                "S3Object": {
+                    "Bucket": bucket,
+                    "Name": key
+                }
+            },
+            MaxLabels=5,
+            MinConfidence=0.75
+        )
     logger.info(f"Labels data : {label_data}")
 
     # Récupération des résultats des labels
-
+    labels = [label["Name"] for label in label_data["Labels"]]
+    logger.info(f"Labels detected : {labels}")
 
     # Mise à jour de la table dynamodb
     table.update_item(
