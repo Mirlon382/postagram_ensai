@@ -3,14 +3,17 @@ from urllib.parse import unquote_plus
 import boto3
 import os
 import logging
+from datetime import datetime
+from cdktf_cdktf_provider_aws.dynamodb_table import DynamodbTable, DynamodbTableAttribute
+
 print('Loading function')
 logger = logging.getLogger()
 logger.setLevel("INFO")
 s3 = boto3.client('s3')
 dynamodb = boto3.resource('dynamodb')
 reckognition = boto3.client('rekognition')
-
-table = dynamodb.Table(os.getenv("table"))
+table_name = os.getenv("TASKS_TABLE")
+table = dynamodb.Table(table_name)
 
 def lambda_handler(event, context):
     logger.info(json.dumps(event, indent=2))
@@ -48,3 +51,4 @@ def lambda_handler(event, context):
         UpdateExpression="SET label = :lab, key = :key",
         ExpressionAttributeValues={":lab": labels, ":key": key},
         )
+    return labels

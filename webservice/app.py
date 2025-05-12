@@ -43,8 +43,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 class Post(BaseModel):
     title: str
     body: str
-    image: Union[str, None] = None
-    label: Union[list[str], None] = []
+
 
 my_config = Config(
     region_name='us-east-1',

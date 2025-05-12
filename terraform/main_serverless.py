@@ -6,6 +6,7 @@ from cdktf_cdktf_provider_aws.default_vpc import DefaultVpc
 from cdktf_cdktf_provider_aws.default_subnet import DefaultSubnet
 from cdktf_cdktf_provider_aws.lambda_function import LambdaFunction
 from cdktf_cdktf_provider_aws.lambda_permission import LambdaPermission
+from cdktf_cdktf_provider_aws.lambda_event_source_mapping import LambdaEventSourceMapping
 from cdktf_cdktf_provider_aws.data_aws_caller_identity import DataAwsCallerIdentity
 from cdktf_cdktf_provider_aws.s3_bucket import S3Bucket
 from cdktf_cdktf_provider_aws.s3_bucket_cors_configuration import S3BucketCorsConfiguration, S3BucketCorsConfigurationCorsRule
@@ -17,7 +18,7 @@ class ServerlessStack(TerraformStack):
         super().__init__(scope, id)
         AwsProvider(self, "AWS", region="us-east-1")
 
-        account_id = DataAwsCallerIdentity(self, "acount_id").account_id
+        account_id = DataAwsCallerIdentity(self, "account_id").account_id
         
 
         bucket = S3Bucket(
@@ -53,20 +54,23 @@ class ServerlessStack(TerraformStack):
          # Packagage du code
         code = TerraformAsset(
             self, "code",
-            path="./lambda",
-            type= AssetType.ARCHIVE
-        )
+            path="./lambda/lambda_code.zip",
+            type=AssetType.FILE
+            )
 
         lambda_function = LambdaFunction(
             self, "lambda",
-            function_name="DetectLabel",
-            runtime="python3.10",
+            function_name="detect_label",
+            runtime="python3.9",
             memory_size=128,
             timeout=60,
             role=f"arn:aws:iam::{account_id}:role/LabRole",
             filename= code.path,
             handler="lambda_function.lambda_handler", #correspond au nom de la function dans dossier lambda
-            environment={"variables":{}}
+            environment={
+        "variables": {
+            "TASKS_TABLE": dynamo_table.name
+            }}
         )
 
         # NE PAS TOUCHER !!!!

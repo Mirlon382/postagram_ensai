@@ -11,6 +11,7 @@ from cdktf_cdktf_provider_aws.lb_listener import LbListener, LbListenerDefaultAc
 from cdktf_cdktf_provider_aws.autoscaling_group import AutoscalingGroup
 from cdktf_cdktf_provider_aws.security_group import SecurityGroup, SecurityGroupIngress, SecurityGroupEgress
 from cdktf_cdktf_provider_aws.data_aws_caller_identity import DataAwsCallerIdentity
+from cdktf_cdktf_provider_aws.data_aws_subnet import DataAwsSubnet
 
 import base64
 
@@ -45,59 +46,29 @@ class ServerStack(TerraformStack):
     def __init__(self, scope: Construct, id: str):
         super().__init__(scope, id)
 
-        account_id = DataAwsCallerIdentity(self, "acount_id").account_id
-        
-        security_group = SecurityGroup(
-                            self, "sg-tp",
-                            ingress=[
-                                SecurityGroupIngress(
-                                    from_port=22,
-                                    to_port=22,
-                                    cidr_blocks=["0.0.0.0/0"],
-                                    protocol="TCP",
-                                    description="Accept incoming SSH connection"
-                                ),
-                                SecurityGroupIngress(
-                                    from_port=80,
-                                    to_port=80,
-                                    cidr_blocks=["0.0.0.0/0"],
-                                    protocol="TCP",
-                                    description="Accept incoming HTTP connection"
-                                )
-                            ],
-                            egress=[
-                                SecurityGroupEgress(
-                                    from_port=0,
-                                    to_port=0,
-                                    cidr_blocks=["0.0.0.0/0"],
-                                    protocol="-1",
-                                    description="allow all egresse connection"
-                                )
-                            ]
-                        )
         account_id, security_group, subnets, default_vpc = self.infra_base()
         
         launch_template = LaunchTemplate(
-            self, "launch template",
+            self, "launch-template-postgram",
             image_id="ami-04b4f1a9cf54c11d0",
             instance_type="t2.micro", # le type de l'instance
             vpc_security_group_ids = [security_group.id],
             key_name="vockey",
             user_data=user_data,
             tags={"Name":"TP noté"},
-            iam_instance_profile={"name":"LabInstanceProfile","arn":"arn_du_role_de_lambda"}
+            iam_instance_profile={"name":"LabInstanceProfile","arn":f"arn:aws:iam::{account_id}:role/LabRole"}
             )
     
 
         lb = Lb(
-            self, "lb",
+            self, "lb-postgram",
             load_balancer_type="application",
             security_groups=[security_group.id],
             subnets=subnets
         )
 
         target_group=LbTargetGroup(
-            self, "tg_group",
+            self, "tg_group-postgram",
             port=8080,
             protocol="HTTP",
             vpc_id=default_vpc.id,
@@ -105,15 +76,18 @@ class ServerStack(TerraformStack):
         )
 
         lb_listener = LbListener(
-            self, "lb_listener",
+            self, "lb_listener-postgram",
             load_balancer_arn=lb.arn,
             port=8080,
             protocol="HTTP",
-            default_action=[LbListenerDefaultAction()]
+            default_action=[LbListenerDefaultAction(
+                type="forward", target_group_arn=target_group.arn
+                ),
+            ]
         )
 
         asg = AutoscalingGroup(
-            self, "asg",
+            self, "asg-postgram",
             min_size=1,
             max_size=4,
             desired_capacity=1,
@@ -127,7 +101,7 @@ class ServerStack(TerraformStack):
         Permet de définir une infra de base, vous ne devez pas y toucher !
         """
         AwsProvider(self, "AWS", region="us-east-1")
-        account_id = DataAwsCallerIdentity(self, "acount_id").account_id
+        account_id = DataAwsCallerIdentity(self, "account_id").account_id
 
         default_vpc = DefaultVpc(
             self, "default_vpc"
@@ -137,13 +111,14 @@ class ServerStack(TerraformStack):
         # avec x une lettre dans abcdef. Ne permet pas de déployer
         # automatiquement ce code sur une autre région. Le code
         # pour y arriver est vraiment compliqué.
-        az_ids = [f"us-east-1{i}" for i in "abcdef"]
-        subnets= []
-        for i,az_id in enumerate(az_ids):
-            subnets.append(DefaultSubnet(
-            self, f"default_sub{i}",
-            availability_zone=az_id
-        ).id)
+        subnets = []
+        az_ids = [f"us-east-1{i}" for i in "abc"]  # On limite à 3 AZ pour être raisonnable
+        for i, az_id in enumerate(az_ids):
+            subnet = DataAwsSubnet(self, f"default_sub{i}",
+                availability_zone=az_id,
+                default_for_az=True
+        )
+        subnets.append(subnet.id)
             
 
         security_group = SecurityGroup(
