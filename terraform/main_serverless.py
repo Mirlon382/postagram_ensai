@@ -21,8 +21,8 @@ class ServerlessStack(TerraformStack):
         
 
         bucket = S3Bucket(
-            self, "s3_bucket",
-            bucket_prefix="bucket_image"
+            self, "s3-bucket",
+            bucket_prefix="bucket-image"
         )
 
         # NE PAS TOUCHER !!!!
@@ -38,17 +38,12 @@ class ServerlessStack(TerraformStack):
 
         dynamo_table = DynamodbTable(
             self, "DynamodDB-table",
-            name= "postagram_table",
+            name= "postagram-table",
             hash_key="user",
             range_key="id",
             attribute=[
                 DynamodbTableAttribute(name="user",type="S" ),
-                DynamodbTableAttribute(name="id",type="S" ),
-                DynamodbTableAttribute(name="title",type="S" ),
-                DynamodbTableAttribute(name="body",type="S" ),
-                DynamodbTableAttribute(name="image",type="S" ),
-                DynamodbTableAttribute(name="label",type="S" ),
-                DynamodbTableAttribute(name="key",type="S" )
+                DynamodbTableAttribute(name="id",type="S" )
                 ],
             billing_mode="PROVISIONED",
             read_capacity=5,
