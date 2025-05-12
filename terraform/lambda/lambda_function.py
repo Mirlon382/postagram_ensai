@@ -41,5 +41,10 @@ def lambda_handler(event, context):
 
     # Mise à jour de la table dynamodb
     table.update_item(
-
-    )
+        Key={
+        "user": f"USER#{user}",
+        "id": f"ID#{task_uuid}"
+        },
+        UpdateExpression="SET label = :lab",
+        ExpressionAttributeValues={":lab": labels},
+        )

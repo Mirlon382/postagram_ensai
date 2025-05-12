@@ -19,6 +19,7 @@ class ServerlessStack(TerraformStack):
 
         account_id = DataAwsCallerIdentity(self, "acount_id").account_id
         
+
         bucket = S3Bucket(
             self, "s3_bucket",
             bucket_prefix="bucket_image"
@@ -53,17 +54,22 @@ class ServerlessStack(TerraformStack):
             write_capacity=5
         )
 
-        code = TerraformAsset()
+         # Packagage du code
+        code = TerraformAsset(
+            self, "code",
+            path="./lambda",
+            type= AssetType.ARCHIVE
+        )
 
         lambda_function = LambdaFunction(
             self, "lambda",
-            function_name="",
+            function_name="DetectLabel",
             runtime="python3.10",
             memory_size=128,
             timeout=60,
-            role=f"",
+            role=f"arn:aws:iam::{account_id}:role/LabRole",
             filename= code.path,
-            handler="",
+            handler="lambda_function.lambda_handler", #correspond au nom de la function dans dossier lambda
             environment={"variables":{}}
         )
 
