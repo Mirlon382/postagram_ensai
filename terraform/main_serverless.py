@@ -47,7 +47,8 @@ class ServerlessStack(TerraformStack):
                 DynamodbTableAttribute(name="title",type="S" ),
                 DynamodbTableAttribute(name="body",type="S" ),
                 DynamodbTableAttribute(name="image",type="S" ),
-                DynamodbTableAttribute(name="label",type="S" )
+                DynamodbTableAttribute(name="label",type="S" ),
+                DynamodbTableAttribute(name="key",type="S" )
                 ],
             billing_mode="PROVISIONED",
             read_capacity=5,

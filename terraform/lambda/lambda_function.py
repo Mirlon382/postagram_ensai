@@ -45,6 +45,6 @@ def lambda_handler(event, context):
         "user": f"USER#{user}",
         "id": f"ID#{task_uuid}"
         },
-        UpdateExpression="SET label = :lab",
-        ExpressionAttributeValues={":lab": labels},
+        UpdateExpression="SET label = :lab, key = :key",
+        ExpressionAttributeValues={":lab": labels, ":key": key},
         )

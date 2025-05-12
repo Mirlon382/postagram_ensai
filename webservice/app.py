@@ -68,14 +68,15 @@ async def post_a_post(post: Post, authorization: str | None = Header(default=Non
     """
     Poste un post ! Les informations du poste sont dans post.title, post.body et le user dans authorization
     """
-    import uuid
+    # id publication
     str_id = f'{uuid.uuid4()}'
 
-    # On implem token logique
+    # On implemente token logique
     user = authorization
 
     # Bucket image
-    url_image = getSignedUrl(post.title, filetype??, str_id, user)
+    filetype = "image/jpeg" #peut aussi être image/png argument critique sinon erreur
+    url_image = getSignedUrl(post.title, filetype, str_id, user)
     
     # Logging
     logger.info(f"title : {post.title}")
@@ -88,8 +89,9 @@ async def post_a_post(post: Post, authorization: str | None = Header(default=Non
         'id':f"ID_POST#{str_id}",
         'title':post.title,
         'body':post.body,
-        'image':url_image,
-        'label':post.label # voir lien avec amazon reckognition
+        'image':url_image, #probablement la meme chose que key
+        'label':None, # reckognition
+        'key':None # voir lien avec amazon lambda
         }
         )
 
@@ -112,7 +114,7 @@ async def get_all_posts(user: Union[str, None] = None):
         logger.info("Récupération de tous les postes")
         res = table.scan()
      # Doit retourner une liste de posts
-    return res["Items"]
+    return res["Items"] #ou un dump json?
 
     
 @app.delete("/posts/{post_id}")
@@ -121,11 +123,13 @@ async def delete_post(post_id: str, authorization: str | None = Header(default=N
     logger.info(f"post id : {post_id}")
     logger.info(f"user: {authorization}")
     # Récupération des infos du poste
-    item = get_all_posts(authorization) 
+    user = authorization
+    item = get_all_posts(user)
+    item = item["Items"]
     # S'il y a une image on la supprime de S3
-    if item["Items"]["image"] :
-        path_image = f'{item["user"]}/{item["id"]}/{item["image"]}'
-        s3_client.delete(Bucket=bucket, Key=path_image)
+    if item["image"] : #y'a un truc qui va pas
+        key_bucket = item["key"]
+        s3_client.delete(Bucket=bucket, Key=key_bucket)
     # Suppression de la ligne dans la base dynamodb
     item = table.delete_item(
         Key={'user': f'USER#{authorization}',
