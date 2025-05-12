@@ -71,17 +71,25 @@ async def post_a_post(post: Post, authorization: str | None = Header(default=Non
     import uuid
     str_id = f'{uuid.uuid4()}'
 
+    # On implem token logique
+    user = authorization
+
+    # Bucket image
+    url_image = getSignedUrl(post.title, filetype??, str_id, user)
+    
+    # Logging
     logger.info(f"title : {post.title}")
     logger.info(f"body : {post.body}")
-    logger.info(f"user : {authorization}")
+    logger.info(f"user : {user}")
+
 
     data = table.put_item(Item={
-        'user':f"USER#{authorization}",
+        'user':f"USER#{user}",
         'id':f"ID_POST#{str_id}",
         'title':post.title,
         'body':post.body,
-        'image':post.image,
-        'label':post.label
+        'image':url_image,
+        'label':post.label # voir lien avec amazon reckognition
         }
         )
 
