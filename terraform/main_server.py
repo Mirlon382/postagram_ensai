@@ -53,7 +53,7 @@ class ServerStack(TerraformStack):
             image_id="ami-04b4f1a9cf54c11d0",
             instance_type="t2.micro", # le type de l'instance
             vpc_security_group_ids = [security_group.id],
-            key_name="vockey",
+            key_name="postagram",
             user_data=user_data,
             tags={"Name":"TP noté"},
             iam_instance_profile={"arn": f"arn:aws:iam::{account_id}:instance-profile/LabInstanceProfile"} #arn:aws:iam::<account-id>:instance-profile/<instance-profile-name>
