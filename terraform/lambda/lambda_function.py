@@ -4,7 +4,6 @@ import boto3
 import os
 import logging
 from datetime import datetime
-from cdktf_cdktf_provider_aws.dynamodb_table import DynamodbTable, DynamodbTableAttribute
 
 print('Loading function')
 logger = logging.getLogger()
@@ -51,4 +50,3 @@ def lambda_handler(event, context):
         UpdateExpression="SET label = :lab, key = :key",
         ExpressionAttributeValues={":lab": labels, ":key": key},
         )
-    return labels

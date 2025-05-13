@@ -56,7 +56,7 @@ class ServerStack(TerraformStack):
             key_name="vockey",
             user_data=user_data,
             tags={"Name":"TP noté"},
-            iam_instance_profile={"name":"LabInstanceProfile","arn":f"arn:aws:iam::{account_id}:role/LabRole"}
+            iam_instance_profile={"arn": f"arn:aws:iam::{account_id}:instance-profile/LabInstanceProfile"} #arn:aws:iam::<account-id>:instance-profile/<instance-profile-name>
             )
     
 
@@ -111,15 +111,13 @@ class ServerStack(TerraformStack):
         # avec x une lettre dans abcdef. Ne permet pas de déployer
         # automatiquement ce code sur une autre région. Le code
         # pour y arriver est vraiment compliqué.
-        subnets = []
-        az_ids = [f"us-east-1{i}" for i in "abc"]  # On limite à 3 AZ pour être raisonnable
-        for i, az_id in enumerate(az_ids):
-            subnet = DataAwsSubnet(self, f"default_sub{i}",
-                availability_zone=az_id,
-                default_for_az=True
-        )
-        subnets.append(subnet.id)
-            
+        az_ids = [f"us-east-1{i}" for i in "abcdef"]
+        subnets= []
+        for i,az_id in enumerate(az_ids):
+            subnets.append(DefaultSubnet(
+            self, f"default_sub{i}",
+            availability_zone=az_id
+        ).id)   
 
         security_group = SecurityGroup(
             self, "sg-tp",
