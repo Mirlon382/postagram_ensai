@@ -9,13 +9,15 @@ Le projet fonctionne au 14/05. La génération d'url est dans la lambda pour ras
 
 Bien penser a mettre a jour : 
 
-l'url du loadbalancer dans le frontend dans index.js
+- l'url du loadbalancer dans le frontend dans index.js
 
 Erreurs possibles :
 
-Le nom du bucket existe déjà
+- Le nom du bucket existe déjà
 
-Les ressources aws exitent déjà
+- Les ressources aws exitent déjà
+
+- :issues:
 
 # Devoir noté 2 : Postagram
 
