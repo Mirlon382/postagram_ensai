@@ -24,6 +24,17 @@ def lambda_handler(event, context):
     # Ajout des tags user et task_uuid
     user, task_uuid = key.split('/')[:2]
 
+    #url bucket
+    expiration=3600
+    try:
+        response = s3.generate_presigned_url('get_object',
+        Params={'Bucket': bucket,
+        'Key': key},
+        ExpiresIn=expiration)
+        url = response
+    except ClientError as e:
+        logging.error(e)
+
     # Appel à reckognition
     label_data = reckognition.detect_labels( 
             Image={
@@ -41,12 +52,13 @@ def lambda_handler(event, context):
     labels = [label["Name"] for label in label_data["Labels"]]
     logger.info(f"Labels detected : {labels}")
 
-    # Mise à jour de la table dynamodb
+    # Mise à jour de la table dynamodb avec label url et key
     table.update_item(
         Key={
         "user": f"USER#{user}",
-        "id": f"ID#{task_uuid}"
+        "id": f"ID_POST#{task_uuid}"
         },
-        UpdateExpression="SET label = :lab, key = :key",
-        ExpressionAttributeValues={":lab": labels, ":key": key},
+        UpdateExpression="SET label = :lab, #k = :key, image = :url",
+        ExpressionAttributeValues={":lab": labels, ":key": key, ":url": url},
+        ExpressionAttributeNames={"#k": "key"}  # 'key' is a reserved word!
         )

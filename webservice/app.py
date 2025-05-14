@@ -101,6 +101,7 @@ async def get_all_posts(user: Union[str, None] = None):
     - Si un user est présent dans le requête, récupère uniquement les siens
     - Si aucun user n'est présent, récupère TOUS les postes de la table !!
     """
+    from boto3.dynamodb.conditions import Key
     try:
         if user:
             logger.info(f"Récupération des postes de : {user}")

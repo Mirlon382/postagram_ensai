@@ -3,7 +3,9 @@
 ##           NE PAS TOUCHER !!!!!!!!!           ## 
 ##                                              ##
 ##################################################
-
+# Ajout perso (sinon bucket = None)
+from dotenv import load_dotenv
+load_dotenv()
 
 import logging
 import boto3
