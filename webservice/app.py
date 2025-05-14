@@ -63,7 +63,7 @@ bucket = os.getenv("BUCKET")
 
 
 @app.post("/posts")
-async def post_a_post(post: Post, Authorization: str | None = Header(default=None)):
+async def post_a_post(post: Post, authorization: str | None = Header(default=None)):
     """
     Poste un post ! Les informations du poste sont dans post.title, post.body et le user dans authorization
     """
@@ -72,11 +72,9 @@ async def post_a_post(post: Post, Authorization: str | None = Header(default=Non
 
     try:
         str_id = str(uuid.uuid4())
-        user = str(Authorization)
+        user = str(authorization)
 
         # 🔧 Utilisation simulée de getSignedUrl — réactive-le si nécessaire
-        url_image = "url_image"  # getSignedUrl(post.title, "image/jpeg", str_id, user)
-
         logger.info(f"New post: title={post.title}, user={user}")
 
         table.put_item(Item={
@@ -84,7 +82,7 @@ async def post_a_post(post: Post, Authorization: str | None = Header(default=Non
             'id': f"ID_POST#{str_id}",
             'title': post.title,
             'body': post.body,
-            'image': url_image,
+            'image': None,
             'label': None,
             'key': None
         })

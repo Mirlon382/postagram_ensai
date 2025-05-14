@@ -23,9 +23,8 @@ class ServerlessStack(TerraformStack):
 
         bucket = S3Bucket(
             self, "s3-bucket",
-            name="postagram-bucket",
-            bucket_prefix="bucket-image"
-        )
+            bucket="postagram-bucket3nsa1",
+            )
 
         # NE PAS TOUCHER !!!!
         S3BucketCorsConfiguration(
