@@ -3,6 +3,19 @@ layout: default
 title: "TP noté2 - Faire une API REST 100% serverless 🧰"
 nav_exclude: true
 ---
+# Commentaires Dev
+
+Le projet fonctionne au 14/05. La génération d'url est dans la lambda pour rassembler l'ensemble des traitements image.
+
+Bien penser a mettre a jour : 
+
+l'url du loadbalancer dans le frontend dans index.js
+
+Erreurs possibles :
+
+Le nom du bucket existe déjà
+
+Les ressources aws exitent déjà
 
 # Devoir noté 2 : Postagram
 
