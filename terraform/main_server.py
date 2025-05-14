@@ -16,10 +16,10 @@ from cdktf_cdktf_provider_aws.data_aws_subnet import DataAwsSubnet
 import base64
 
 # Mettez ici le nom du bucket S3 crée dans la partie serverless
-bucket="s3_bucket"
+bucket="postagram-bucket"
 
 # Mettez ici le nom de la table dynamoDB créée dans la partie serverless
-dynamo_table="DynamodDB-table"
+dynamo_table="postagram-table"
 
 # Mettez ici l'url de votre dépôt github. Votre dépôt doit être public !!!
 your_repo="https://github.com/Mirlon382/postagram_ensai"
@@ -72,7 +72,12 @@ class ServerStack(TerraformStack):
             port=8080,
             protocol="HTTP",
             vpc_id=default_vpc.id,
-            target_type="instance"
+            target_type="instance",
+            health_check={
+                    "path": "/docs",  # Or create a custom /health endpoint
+                    "port": "8080",
+                    "protocol": "HTTP"
+                }
         )
 
         lb_listener = LbListener(

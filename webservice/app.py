@@ -63,39 +63,38 @@ bucket = os.getenv("BUCKET")
 
 
 @app.post("/posts")
-async def post_a_post(post: Post, authorization: str | None = Header(default=None)):
+async def post_a_post(post: Post, Authorization: str | None = Header(default=None)):
     """
     Poste un post ! Les informations du poste sont dans post.title, post.body et le user dans authorization
     """
-    # id publication
-    str_id = f'{uuid.uuid4()}'
+    if not authorization:
+        return JSONResponse(content={"error": "Authorization header is required"}, status_code=400)
 
-    # On implemente token logique
-    user = authorization
+    try:
+        str_id = str(uuid.uuid4())
+        user = str(Authorization)
 
-    # Bucket image
-    filetype = "image/jpeg" #peut aussi être image/png argument critique sinon erreur
-    url_image = getSignedUrl(post.title, filetype, str_id, user)
-    
-    # Logging
-    logger.info(f"title : {post.title}")
-    logger.info(f"body : {post.body}")
-    logger.info(f"user : {user}")
+        # 🔧 Utilisation simulée de getSignedUrl — réactive-le si nécessaire
+        url_image = "url_image"  # getSignedUrl(post.title, "image/jpeg", str_id, user)
 
+        logger.info(f"New post: title={post.title}, user={user}")
 
-    data = table.put_item(Item={
-        'user':f"USER#{user}",
-        'id':f"ID_POST#{str_id}",
-        'title':post.title,
-        'body':post.body,
-        'image':url_image, #probablement la meme chose que key
-        'label':None, # reckognition
-        'key':None # voir lien avec amazon lambda
-        }
-        )
+        table.put_item(Item={
+            'user': f"USER#{user}",
+            'id': f"ID_POST#{str_id}",
+            'title': post.title,
+            'body': post.body,
+            'image': url_image,
+            'label': None,
+            'key': None
+        })
 
-    # Doit retourner le résultat de la requête la table dynamodb
-    return data
+        return {"message": "Post created", "post_id": str_id}
+
+    except Exception as e:
+        logger.error(f"Erreur dans /posts: {e}")
+        return JSONResponse(content={"error": "Erreur interne du serveur"}, status_code=500)
+
 
 @app.get("/posts")
 async def get_all_posts(user: Union[str, None] = None):
@@ -104,38 +103,67 @@ async def get_all_posts(user: Union[str, None] = None):
     - Si un user est présent dans le requête, récupère uniquement les siens
     - Si aucun user n'est présent, récupère TOUS les postes de la table !!
     """
-    if user :
-        logger.info(f"Récupération des postes de : {user}")
-        res = table.query(
-        KeyConditionExpression=Key('user').eq(f"USER#{user}")
-        )
-    else :
-        logger.info("Récupération de tous les postes")
-        res = table.scan()
-     # Doit retourner une liste de posts
-    return res["Items"] #ou un dump json?
+    try:
+        if user:
+            logger.info(f"Récupération des postes de : {user}")
+            res = table.query(
+                KeyConditionExpression=Key('user').eq(f"USER#{user}")
+            )
+        else:
+            logger.info("Récupération de tous les postes")
+            res = table.scan()
+
+        logger.info(f"Résultat brut DynamoDB: {res}")
+        return res.get("Items", [])
+    except Exception as e:
+        logger.error(f"Erreur dans /posts: {e}")
+        return JSONResponse(content={"error": "Erreur interne du serveur"}, status_code=500)
+
 
     
 @app.delete("/posts/{post_id}")
 async def delete_post(post_id: str, authorization: str | None = Header(default=None)):
     # Doit retourner le résultat de la requête la table dynamodb
-    logger.info(f"post id : {post_id}")
-    logger.info(f"user: {authorization}")
-    # Récupération des infos du poste
-    user = authorization
-    item = get_all_posts(user)
-    item = item["Items"]
-    # S'il y a une image on la supprime de S3
-    if item["image"] : #y'a un truc qui va pas
-        key_bucket = item["key"]
-        s3_client.delete(Bucket=bucket, Key=key_bucket)
-    # Suppression de la ligne dans la base dynamodb
-    item = table.delete_item(
-        Key={'user': f'USER#{authorization}',
-        'id_post': f'ID#{post_id}'}
+    if not authorization:
+        return JSONResponse(content={"error": "Authorization header is required"}, status_code=400)
+
+    try:
+        logger.info(f"Tentative de suppression: post_id={post_id}, user={authorization}")
+
+        # 🔧 Recherche du post
+        response = table.get_item(
+            Key={
+                'user': f"USER#{authorization}",
+                'id': f"ID_POST#{post_id}"
+            }
         )
-    # Retourne le résultat de la requête de suppression
-    return item
+
+        item = response.get("Item")
+        if not item:
+            return JSONResponse(content={"error": "Post not found"}, status_code=404)
+
+        # 🔧 Suppression de l'image S3 si elle existe
+        if item.get("key"):
+            try:
+                s3_client.delete_object(Bucket=bucket, Key=item["key"])
+                logger.info(f"Image supprimée de S3: {item['key']}")
+            except Exception as s3_err:
+                logger.warning(f"Échec suppression image S3: {s3_err}")
+
+        # 🔧 Suppression de la ligne DynamoDB
+        table.delete_item(
+            Key={
+                'user': f"USER#{authorization}",
+                'id': f"ID_POST#{post_id}"
+            }
+        )
+
+        return {"message": "Post supprimé"}
+
+    except Exception as e:
+        logger.error(f"Erreur dans DELETE /posts/{post_id}: {e}")
+        return JSONResponse(content={"error": "Erreur interne du serveur"}, status_code=500)
+
 
 
 
