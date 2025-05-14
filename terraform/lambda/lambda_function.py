@@ -11,7 +11,7 @@ logger.setLevel("INFO")
 s3 = boto3.client('s3')
 dynamodb = boto3.resource('dynamodb')
 reckognition = boto3.client('rekognition')
-table_name = os.getenv("TASKS_TABLE")
+table_name = os.getenv("TABLE")
 table = dynamodb.Table(table_name)
 
 def lambda_handler(event, context):
