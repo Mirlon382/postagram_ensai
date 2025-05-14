@@ -74,7 +74,7 @@ class ServerStack(TerraformStack):
             vpc_id=default_vpc.id,
             target_type="instance",
             health_check={
-                    "path": "/docs",  # Or create a custom /health endpoint
+                    "path": "/docs", # Permet de vérifier que tout va bien
                     "port": "8080",
                     "protocol": "HTTP"
                 }

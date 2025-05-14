@@ -3,6 +3,7 @@
 ##                                 NE PAS TOUCHER CETTE PARTIE                                 ##
 ##                                                                                             ##
 ## 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 ##
+
 import boto3
 from botocore.config import Config
 import os
@@ -16,6 +17,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
+from boto3.dynamodb.conditions import Key #Ajout perso
 
 from getSignedUrl import getSignedUrl
 
@@ -67,17 +69,15 @@ async def post_a_post(post: Post, authorization: str | None = Header(default=Non
     """
     Poste un post ! Les informations du poste sont dans post.title, post.body et le user dans authorization
     """
-    if not authorization:
-        return JSONResponse(content={"error": "Authorization header is required"}, status_code=400)
 
     try:
+        logger.info(f"Creation post {post.title} pour {authorization}")
+
         str_id = str(uuid.uuid4())
         user = str(authorization)
 
-        # 🔧 Utilisation simulée de getSignedUrl — réactive-le si nécessaire
-        logger.info(f"New post: title={post.title}, user={user}")
-
-        table.put_item(Item={
+        # Ajout dans la table
+        return table.put_item(Item={
             'user': f"USER#{user}",
             'id': f"ID_POST#{str_id}",
             'title': post.title,
@@ -87,10 +87,8 @@ async def post_a_post(post: Post, authorization: str | None = Header(default=Non
             'key': None
         })
 
-        return {"message": "Post created", "post_id": str_id}
-
     except Exception as e:
-        logger.error(f"Erreur dans /posts: {e}")
+        logger.error(f"Erreur POST: {e}")
         return JSONResponse(content={"error": "Erreur interne du serveur"}, status_code=500)
 
 
@@ -101,66 +99,64 @@ async def get_all_posts(user: Union[str, None] = None):
     - Si un user est présent dans le requête, récupère uniquement les siens
     - Si aucun user n'est présent, récupère TOUS les postes de la table !!
     """
-    from boto3.dynamodb.conditions import Key
+    
     try:
         if user:
-            logger.info(f"Récupération des postes de : {user}")
+
+            logger.info(f"Récupération post {user}")
             res = table.query(
                 KeyConditionExpression=Key('user').eq(f"USER#{user}")
             )
         else:
-            logger.info("Récupération de tous les postes")
+
+            logger.info("Récupération tous les posts")
             res = table.scan()
 
-        logger.info(f"Résultat brut DynamoDB: {res}")
         return res.get("Items", [])
     except Exception as e:
-        logger.error(f"Erreur dans /posts: {e}")
+        logger.error(f"Erreur GET: {e}")
         return JSONResponse(content={"error": "Erreur interne du serveur"}, status_code=500)
 
 
     
 @app.delete("/posts/{post_id}")
 async def delete_post(post_id: str, authorization: str | None = Header(default=None)):
-    # Doit retourner le résultat de la requête la table dynamodb
-    if not authorization:
-        return JSONResponse(content={"error": "Authorization header is required"}, status_code=400)
+    """
+    doc?
+    """
 
     try:
-        logger.info(f"Tentative de suppression: post_id={post_id}, user={authorization}")
+        logger.info(f"Suppression de {post_id} pour {authorization}")
 
-        # 🔧 Recherche du post
+        # Récupération de la ligne dans la table
         response = table.get_item(
             Key={
                 'user': f"USER#{authorization}",
                 'id': f"ID_POST#{post_id}"
             }
         )
-
         item = response.get("Item")
+        
         if not item:
-            return JSONResponse(content={"error": "Post not found"}, status_code=404)
+            return JSONResponse(content={"error": "Pas de post"}, status_code=404)
 
-        # 🔧 Suppression de l'image S3 si elle existe
+        # Verifie si image S3 par presence de key voire la lambda
         if item.get("key"):
             try:
                 s3_client.delete_object(Bucket=bucket, Key=item["key"])
                 logger.info(f"Image supprimée de S3: {item['key']}")
-            except Exception as s3_err:
-                logger.warning(f"Échec suppression image S3: {s3_err}")
+            except Exception as image_e:
+                logger.warning(f"Échec suppression image S3: {image_e}")
 
-        # 🔧 Suppression de la ligne DynamoDB
-        table.delete_item(
+        return table.delete_item(
             Key={
                 'user': f"USER#{authorization}",
                 'id': f"ID_POST#{post_id}"
             }
         )
 
-        return {"message": "Post supprimé"}
-
     except Exception as e:
-        logger.error(f"Erreur dans DELETE /posts/{post_id}: {e}")
+        logger.error(f"Erreur DELETE : {e}")
         return JSONResponse(content={"error": "Erreur interne du serveur"}, status_code=500)
 
 

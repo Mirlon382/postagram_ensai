@@ -23,7 +23,7 @@ class ServerlessStack(TerraformStack):
 
         bucket = S3Bucket(
             self, "s3-bucket",
-            bucket="postagram-bucket3nsa1",
+            bucket="postagram-bucket3nsa1", # Le nom doit etre unique donc pas idéal mais pratique
             )
 
         # NE PAS TOUCHER !!!!
@@ -54,7 +54,7 @@ class ServerlessStack(TerraformStack):
          # Packagage du code
         code = TerraformAsset(
             self, "code",
-            path="./lambda/lambda_code.zip",
+            path="./lambda/lambda_code.zip", #alternative au cours car erreur lors du zippage par terraform
             type=AssetType.FILE
             )
 
@@ -69,7 +69,7 @@ class ServerlessStack(TerraformStack):
             handler="lambda_function.lambda_handler", #correspond au nom de la function dans dossier lambda
             environment={
         "variables": {
-            "TASKS_TABLE": dynamo_table.name
+            "TABLE": dynamo_table.name
             }}
         )
 
